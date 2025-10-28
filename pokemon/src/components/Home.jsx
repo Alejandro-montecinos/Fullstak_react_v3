@@ -249,7 +249,7 @@ function Home() {
           pointerEvents: user ? 'auto' : 'none',
           userSelect: user ? 'auto' : 'none',
         }}
-        onClick={() => alert('Funcionalidad de carrito no implementada aún')}
+        onClick={() => navigate('/cart')}
         aria-label="Carrito de compras"
         disabled={!user}
       >
