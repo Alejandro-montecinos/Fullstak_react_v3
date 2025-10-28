@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { productos as cartas } from '../data/productos';
+
 
 function Sidebar({ user, onLogout }) {
   const [abierto, setAbierto] = useState(false);
@@ -112,18 +114,6 @@ const BlurOverlay = () => (
   </div>
 );
 
-const cartas = [
-  { producto: 'Bulbasaur', imagen: '/img/Bulbasaur.jpg', precio: 4000 },
-  { producto: 'Charizard', imagen: '/img/Charizard.png', precio: 25000 },
-  { producto: 'Dragonite', imagen: '/img/Dragonite.jpg', precio: 20000 },
-  { producto: 'Gengar', imagen: '/img/Gengar.png', precio: 12000 },
-  { producto: 'Jigglypuff', imagen: '/img/Jigglypuff.png', precio: 3500 },
-  { producto: 'Mewtwo', imagen: '/img/Mewtwo.jpg', precio: 15000 },
-  { producto: 'Pikachu', imagen: '/img/Pikachu.jpg', precio: 5000 },
-  { producto: 'Snorlax', imagen: '/img/Snorlax.png', precio: 10000 },
-  { producto: 'Squirtle', imagen: '/img/Squirtle.jpg', precio: 4500 },
-  { producto: 'Eevee', imagen: '/img/Eevee.png', precio: 6000 },
-];
 
 function Home() {
   const { user, logout } = useAuth();
