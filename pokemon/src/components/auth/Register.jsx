@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const Register = () => {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     nombreCompleto: '',
     email: '',
@@ -16,22 +16,22 @@ const Register = () => {
     ciudad: '',
     numeracion: '',
     codigoPostal: '',
-    indicacionesEntrega: ''
+    indicacionesEntrega: '',
   });
 
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }));
     }
   };
@@ -85,14 +85,25 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       const { confirmPassword, ...userData } = formData;
-      await register(userData);
+
+      // Mapeo FORM → backend UsuarioModel
+      const usuarioBackend = {
+        nombre: userData.nombreCompleto,
+        correo: userData.email,
+        contrasenia: userData.password,
+        direccion: userData.direccion,
+        numeracion: userData.numeracion,
+        comuna: userData.comuna,
+        ciudad: userData.ciudad,
+        codigoPostal: userData.codigoPostal,
+        descripcionEntrega: userData.indicacionesEntrega,
+      };
+
+      await register(usuarioBackend);
       navigate('/');
     } catch (error) {
       setErrors({ submit: error.message });
@@ -116,7 +127,6 @@ const Register = () => {
                 <h2 className="text-center mb-0">Únete a la Aventura Pokémon</h2>
               </div>
               <div className="card-body p-4">
-                
                 {errors.submit && (
                   <div className="alert alert-danger" role="alert">
                     {errors.submit}
@@ -129,7 +139,7 @@ const Register = () => {
                     <legend className="h5 text-primary border-bottom pb-2">
                       Información Personal
                     </legend>
-                    
+
                     <div className="row">
                       <div className="col-md-6">
                         <div className="mb-3">
@@ -138,7 +148,9 @@ const Register = () => {
                           </label>
                           <input
                             type="text"
-                            className={`form-control ${errors.nombreCompleto ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.nombreCompleto ? 'is-invalid' : ''
+                            }`}
                             id="nombreCompleto"
                             name="nombreCompleto"
                             value={formData.nombreCompleto}
@@ -146,11 +158,13 @@ const Register = () => {
                             placeholder="Ej: Ash Ketchum"
                           />
                           {errors.nombreCompleto && (
-                            <div className="invalid-feedback">{errors.nombreCompleto}</div>
+                            <div className="invalid-feedback">
+                              {errors.nombreCompleto}
+                            </div>
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="col-md-6">
                         <div className="mb-3">
                           <label htmlFor="email" className="form-label">
@@ -180,7 +194,9 @@ const Register = () => {
                           </label>
                           <input
                             type="password"
-                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.password ? 'is-invalid' : ''
+                            }`}
                             id="password"
                             name="password"
                             value={formData.password}
@@ -192,7 +208,7 @@ const Register = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="col-md-6">
                         <div className="mb-3">
                           <label htmlFor="confirmPassword" className="form-label">
@@ -200,7 +216,9 @@ const Register = () => {
                           </label>
                           <input
                             type="password"
-                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.confirmPassword ? 'is-invalid' : ''
+                            }`}
                             id="confirmPassword"
                             name="confirmPassword"
                             value={formData.confirmPassword}
@@ -208,7 +226,9 @@ const Register = () => {
                             placeholder="Repite tu contraseña"
                           />
                           {errors.confirmPassword && (
-                            <div className="invalid-feedback">{errors.confirmPassword}</div>
+                            <div className="invalid-feedback">
+                              {errors.confirmPassword}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -220,14 +240,16 @@ const Register = () => {
                     <legend className="h5 text-primary border-bottom pb-2">
                       Dirección de Entrega
                     </legend>
-                    
+
                     <div className="mb-3">
                       <label htmlFor="direccion" className="form-label">
                         Dirección *
                       </label>
                       <input
                         type="text"
-                        className={`form-control ${errors.direccion ? 'is-invalid' : ''}`}
+                        className={`form-control ${
+                          errors.direccion ? 'is-invalid' : ''
+                        }`}
                         id="direccion"
                         name="direccion"
                         value={formData.direccion}
@@ -247,7 +269,9 @@ const Register = () => {
                           </label>
                           <input
                             type="text"
-                            className={`form-control ${errors.numeracion ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.numeracion ? 'is-invalid' : ''
+                            }`}
                             id="numeracion"
                             name="numeracion"
                             value={formData.numeracion}
@@ -259,7 +283,7 @@ const Register = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="col-md-4">
                         <div className="mb-3">
                           <label htmlFor="comuna" className="form-label">
@@ -267,7 +291,9 @@ const Register = () => {
                           </label>
                           <input
                             type="text"
-                            className={`form-control ${errors.comuna ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.comuna ? 'is-invalid' : ''
+                            }`}
                             id="comuna"
                             name="comuna"
                             value={formData.comuna}
@@ -279,7 +305,7 @@ const Register = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="col-md-4">
                         <div className="mb-3">
                           <label htmlFor="ciudad" className="form-label">
@@ -287,7 +313,9 @@ const Register = () => {
                           </label>
                           <input
                             type="text"
-                            className={`form-control ${errors.ciudad ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.ciudad ? 'is-invalid' : ''
+                            }`}
                             id="ciudad"
                             name="ciudad"
                             value={formData.ciudad}
@@ -309,7 +337,9 @@ const Register = () => {
                           </label>
                           <input
                             type="text"
-                            className={`form-control ${errors.codigoPostal ? 'is-invalid' : ''}`}
+                            className={`form-control ${
+                              errors.codigoPostal ? 'is-invalid' : ''
+                            }`}
                             id="codigoPostal"
                             name="codigoPostal"
                             value={formData.codigoPostal}
@@ -317,7 +347,9 @@ const Register = () => {
                             placeholder="Ej: 1234567"
                           />
                           {errors.codigoPostal && (
-                            <div className="invalid-feedback">{errors.codigoPostal}</div>
+                            <div className="invalid-feedback">
+                              {errors.codigoPostal}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -340,14 +372,18 @@ const Register = () => {
                   </fieldset>
 
                   <div className="d-grid">
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="btn btn-primary btn-lg"
                       disabled={loading}
                     >
                       {loading ? (
                         <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
                           Registrando...
                         </>
                       ) : (
@@ -358,7 +394,10 @@ const Register = () => {
 
                   <div className="text-center mt-3">
                     <small className="text-muted">
-                      ¿Ya tienes cuenta? <a href="/login" className="text-decoration-none">Inicia sesión aquí</a>
+                      ¿Ya tienes cuenta?{' '}
+                      <a href="/login" className="text-decoration-none">
+                        Inicia sesión aquí
+                      </a>
                     </small>
                   </div>
                 </form>
