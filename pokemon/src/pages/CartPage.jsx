@@ -1,5 +1,4 @@
-// src/pages/CartPage.jsx
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -16,40 +15,44 @@ export default function CartPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Estado del carrito (mismo shape que usas en Home: { producto, precio, cantidad })
   const [listaCarrito, setListaCarrito] = useState(() => {
     const guardado = localStorage.getItem(CLAVE_CARRITO);
     return guardado ? JSON.parse(guardado) : [];
   });
 
-  // Persistencia
   useEffect(() => {
     localStorage.setItem(CLAVE_CARRITO, JSON.stringify(listaCarrito));
   }, [listaCarrito]);
 
-  // Derivados
   const totalProductos = listaCarrito.reduce((acc, item) => acc + item.cantidad, 0);
-  const totalPagar = listaCarrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+  const totalPagar = listaCarrito.reduce(
+    (acc, item) => acc + item.precio * item.cantidad,
+    0
+  );
 
-  // Acciones
   const actualizarCantidad = (nombreProducto, nuevaCantidad) => {
     if (!user) return;
-    const cantidadNormalizada = Math.min(30, Math.max(1, Number(nuevaCantidad) || 1));
+    const cantidadNum = Math.max(1, Number(nuevaCantidad) || 1);
+
     setListaCarrito((prev) =>
-      prev.map((x) =>
-        x.producto === nombreProducto ? { ...x, cantidad: cantidadNormalizada } : x
-      )
+      prev.map((x) => {
+        if (x.producto !== nombreProducto) return x;
+        const stock = x.stock ?? Infinity;
+        const cantidadFinal = Math.min(30, Math.min(cantidadNum, stock));
+        return { ...x, cantidad: cantidadFinal };
+      })
     );
   };
 
   const incrementar = (nombreProducto) => {
     if (!user) return;
     setListaCarrito((prev) =>
-      prev.map((x) =>
-        x.producto === nombreProducto
-          ? { ...x, cantidad: Math.min(30, x.cantidad + 1) }
-          : x
-      )
+      prev.map((x) => {
+        if (x.producto !== nombreProducto) return x;
+        const stock = x.stock ?? Infinity;
+        const nuevaCantidad = Math.min(30, x.cantidad + 1, stock);
+        return { ...x, cantidad: nuevaCantidad };
+      })
     );
   };
 
@@ -71,9 +74,7 @@ export default function CartPage() {
 
   const vaciarCarrito = () => {
     if (!user) return;
-    if (window.confirm("¿Vaciar todo el carrito?")) {
-      setListaCarrito([]);
-    }
+    if (window.confirm("¿Vaciar todo el carrito?")) setListaCarrito([]);
   };
 
   const irAlCheckout = () => {
@@ -88,7 +89,6 @@ export default function CartPage() {
     navigate("/checkout");
   };
 
-  // UI bloqueada si no hay usuario (similar a tu BlurOverlay de Home)
   const estaBloqueado = !user;
 
   return (
@@ -140,9 +140,25 @@ export default function CartPage() {
                     userSelect: estaBloqueado ? "none" : "auto",
                   }}
                 >
-                  {listaCarrito.map(({ producto, precio, cantidad }) => (
-                    <tr key={producto}>
-                      <td className="fw-semibold">{producto}</td>
+                  {listaCarrito.map(({ producto, precio, cantidad, rutaImagen, stock }, idx) => (
+                    <tr key={`${producto}-${idx}`}>
+                      <td className="fw-semibold">
+                        <div className="d-flex align-items-center gap-3">
+                          {rutaImagen && (
+                            <img
+                              src={rutaImagen}
+                              alt={producto}
+                              style={{
+                                width: 60,
+                                height: 80,
+                                objectFit: "contain",
+                                borderRadius: 4,
+                              }}
+                            />
+                          )}
+                          <span>{producto}</span>
+                        </div>
+                      </td>
                       <td>{formatearPrecio(precio)}</td>
                       <td>
                         <div className="input-group">
@@ -155,7 +171,9 @@ export default function CartPage() {
                           <input
                             className="form-control text-center"
                             value={cantidad}
-                            onChange={(e) => actualizarCantidad(producto, e.target.value)}
+                            onChange={(e) =>
+                              actualizarCantidad(producto, e.target.value)
+                            }
                           />
                           <button
                             className="btn btn-outline-secondary"
@@ -164,6 +182,11 @@ export default function CartPage() {
                             +
                           </button>
                         </div>
+                        {stock !== undefined && (
+                          <small className="text-muted">
+                            Stock máximo: {stock}
+                          </small>
+                        )}
                       </td>
                       <td className="fw-semibold">{formatearPrecio(precio * cantidad)}</td>
                       <td>
@@ -180,61 +203,24 @@ export default function CartPage() {
               </table>
             </div>
 
-            <div
-              className="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-3 mt-3"
-              style={{
-                filter: estaBloqueado ? "blur(4px)" : "none",
-                pointerEvents: estaBloqueado ? "none" : "auto",
-                userSelect: estaBloqueado ? "none" : "auto",
-              }}
-            >
-              <div className="text-muted">
-                <strong>{totalProductos}</strong> {totalProductos === 1 ? "artículo" : "artículos"}
-              </div>
-              <div className="d-flex align-items-center gap-3">
-                <div className="fs-5">
-                  Total: <strong>{formatearPrecio(totalPagar)}</strong>
+            <div className="row justify-content-end mt-4">
+              <div className="col-md-4">
+                <div className="d-flex align-items-center gap-3">
+                  <div className="fs-5">
+                    Total ({totalProductos} productos): <strong>{formatearPrecio(totalPagar)}</strong>
+                  </div>
+                  <button className="btn btn-outline-secondary" onClick={vaciarCarrito}>
+                    Vaciar carrito
+                  </button>
+                  <button className="btn btn-success" onClick={irAlCheckout}>
+                    Ir a pagar
+                  </button>
                 </div>
-                <button className="btn btn-outline-secondary" onClick={vaciarCarrito}>
-                  Vaciar carrito
-                </button>
-                <button className="btn btn-success" onClick={irAlCheckout}>
-                  Ir a pagar
-                </button>
               </div>
             </div>
           </>
         )}
       </div>
-
-      {/* Capa de bloqueo si NO hay sesión (mismo concepto que tu BlurOverlay) */}
-      {!user && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(255,255,255,0.6)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            zIndex: 1000,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            pointerEvents: "auto",
-          }}
-        >
-          <h2 className="text-dark mb-3">Debes iniciar sesión para ver el carrito</h2>
-          <div>
-            <Link to="/login" className="btn btn-primary me-2">
-              Iniciar Sesión
-            </Link>
-            <Link to="/register" className="btn btn-outline-primary">
-              Registrarse
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

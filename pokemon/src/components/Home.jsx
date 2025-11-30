@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { productos as cartas } from '../data/productos';
-
+import { api } from '../services/api';
 
 function Sidebar({ user, onLogout }) {
   const [abierto, setAbierto] = useState(false);
@@ -54,17 +53,26 @@ function Sidebar({ user, onLogout }) {
           color: 'white',
         }}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="white"
-          viewBox="0 0 24 24"
-          width="80"
-          height="80"
-          style={{ marginBottom: 15 }}
-        >
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 20c0-4 8-4 8-4s8 0 8 4v2H4v-2z" />
-        </svg>
+        {/* SVG reemplazado por div simple */}
+        <div style={{ 
+          width: 80, 
+          height: 80, 
+          background: 'radial-gradient(circle at 50% 30%, white 20%, transparent 50%)', 
+          borderRadius: '50%', 
+          marginBottom: 15,
+          position: 'relative'
+        }}>
+          <div style={{
+            position: 'absolute',
+            bottom: 10,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 40,
+            height: 20,
+            background: 'white',
+            borderRadius: '10px'
+          }} />
+        </div>
         <div style={{ fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '20px' }}>
           Hola, {user ? (user.nombreCompleto || user.email) : 'Invitado'}
         </div>
@@ -113,41 +121,91 @@ const BlurOverlay = () => (
     </div>
   </div>
 );
-
-
 function Home() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Estado para carrito (mismo que antes)
   const [carrito, setCarrito] = useState(() => {
     const saved = localStorage.getItem('carritoReact');
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Estado para productos desde la API
+  const [productos, setProductos] = useState([]);
+  const [cargandoProd, setCargandoProd] = useState(false);
+  const [errorProd, setErrorProd] = useState('');
+
+  // Persistencia del carrito
   useEffect(() => {
     localStorage.setItem('carritoReact', JSON.stringify(carrito));
   }, [carrito]);
 
-  const agregarAlCarrito = (producto, precio, cantidad) => {
-    if (!user) {
-      alert('Debes iniciar sesión para agregar al carrito.');
-      return;
-    }
-    cantidad = Number(cantidad);
-    if (cantidad < 1 || cantidad > 30) {
-      alert('La cantidad debe estar entre 1 y 30.');
-      return;
-    }
-    const existingIndex = carrito.findIndex((item) => item.producto === producto);
-    let nuevoCarrito = [...carrito];
-    if (existingIndex >= 0) {
-      nuevoCarrito[existingIndex].cantidad += cantidad;
-    } else {
-      nuevoCarrito.push({ producto, precio, cantidad });
-    }
-    setCarrito(nuevoCarrito);
-    alert(`${cantidad} carta(s) de ${producto} añadida(s) al carrito.`);
-  };
+  // Cargar productos desde Spring Boot
+  useEffect(() => {
+    const cargarProductos = async () => {
+      setCargandoProd(true);
+      try {
+        const data = await api.obtenerProductos();
+        setProductos(data);
+      } catch (e) {
+        setErrorProd(e.message);
+      } finally {
+        setCargandoProd(false);
+      }
+    };
+    cargarProductos();
+  }, []);
+
+  // agregarAlCarrito adaptado para objetos producto completos
+  const agregarAlCarrito = (productoObj, cantidad) => {
+  if (!user) {
+    alert('Debes iniciar sesión para agregar al carrito.');
+    return;
+  }
+
+  const stock = Number(productoObj.cantidad || 0);
+  cantidad = Number(cantidad);
+
+  if (cantidad < 1 || cantidad > 30) {
+    alert('La cantidad debe estar entre 1 y 30.');
+    return;
+  }
+
+  const nombre = productoObj.nombre;
+  const precio = productoObj.precio;
+
+  // Buscar si ya existe en el carrito
+  const existingIndex = carrito.findIndex((item) => item.producto === nombre);
+  const nuevoCarrito = [...carrito];
+
+  const cantidadActualEnCarrito =
+    existingIndex >= 0 ? nuevoCarrito[existingIndex].cantidad : 0;
+
+  const totalDeseado = cantidadActualEnCarrito + cantidad;
+
+  // Validar contra stock
+  if (totalDeseado > stock) {
+    alert(`No puedes agregar más de ${stock} cartas de ${nombre}.`);
+    return;
+  }
+
+  if (existingIndex >= 0) {
+    nuevoCarrito[existingIndex].cantidad = totalDeseado;
+  } else {
+    nuevoCarrito.push({
+      producto: nombre,
+      precio,
+      cantidad,
+      rutaImagen: productoObj.rutaImagen,
+      stock, // stock del producto
+    });
+  }
+
+  setCarrito(nuevoCarrito);
+  alert(`${cantidad} carta(s) de ${nombre} añadida(s) al carrito.`);
+};
+
 
   const handleLogout = () => {
     logout();
@@ -169,6 +227,7 @@ function Home() {
       }}
     >
       <Sidebar user={user} onLogout={handleLogout} />
+      
       <div
         style={{
           position: 'absolute',
@@ -201,16 +260,31 @@ function Home() {
         </div>
       )}
 
+      {/* Estados de carga/error */}
+      {cargandoProd && (
+        <div className="text-center mt-5 text-light">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+          <p className="mt-2">Cargando cartas Pokémon...</p>
+        </div>
+      )}
+      
+      {errorProd && (
+        <div className="alert alert-danger text-center mt-5">
+          Error al cargar productos: {errorProd}
+        </div>
+      )}
+
+      {/* Render de productos desde API */}
       <section
         className="d-flex flex-wrap justify-content-center align-items-start"
         style={{ gap: '16px', marginTop: '40px', position: 'relative', zIndex: 1 }}
       >
-        {cartas.map(({ producto, imagen, precio }) => (
+        {productos.map((p) => (
           <ProductCard
-            key={producto}
-            producto={producto}
-            imagen={imagen}
-            precio={precio}
+            key={p.id}
+            producto={p}
             agregarAlCarrito={agregarAlCarrito}
           />
         ))}
@@ -243,17 +317,11 @@ function Home() {
         aria-label="Carrito de compras"
         disabled={!user}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          width="28"
-          height="28"
-          fill="black"
-        >
-          <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm0 2zM1 2h2l3.6 7.59-1.35 2.44c-.16.28-.25.61-.25.97 0 1.11.89 2 2 2h12v-2H7.42a.25.25 0 01-.24-.17L7 11h11c.83 0 1.54-.5 1.84-1.22L21.72 6c.08-.2.09-.42.07-.64-.04-.39-.39-.68-.78-.68H5.21l-.94-2H1v2z" />
-        </svg>
+        {/* SVG reemplazado por emoji */}
+        <span style={{ fontSize: '24px' }}>🛒</span>
       </button>
-            <div style={{ maxWidth: 640, margin: '40px auto', textAlign: 'center' }}>
+      
+      <div style={{ maxWidth: 640, margin: '40px auto', textAlign: 'center' }}>
         <h2>¡Atrápalos ya!</h2>
         <iframe
           width="560"
