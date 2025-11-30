@@ -25,26 +25,34 @@ function Cart() {
   }, [listaCarrito]);
 
   const totalProductos = listaCarrito.reduce((acc, item) => acc + item.cantidad, 0);
-  const totalPagar = listaCarrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+  const totalPagar = listaCarrito.reduce(
+    (acc, item) => acc + item.precio * item.cantidad,
+    0
+  );
 
   const actualizarCantidad = (nombreProducto, nuevaCantidad) => {
     if (!user) return;
-    const cantidadNormalizada = Math.min(30, Math.max(1, Number(nuevaCantidad) || 1));
+    const cantidadNum = Math.max(1, Number(nuevaCantidad) || 1);
+
     setListaCarrito((prev) =>
-      prev.map((x) =>
-        x.producto === nombreProducto ? { ...x, cantidad: cantidadNormalizada } : x
-      )
+      prev.map((x) => {
+        if (x.producto !== nombreProducto) return x;
+        const stock = x.stock ?? Infinity;
+        const cantidadFinal = Math.min(30, Math.min(cantidadNum, stock));
+        return { ...x, cantidad: cantidadFinal };
+      })
     );
   };
 
   const incrementar = (nombreProducto) => {
     if (!user) return;
     setListaCarrito((prev) =>
-      prev.map((x) =>
-        x.producto === nombreProducto
-          ? { ...x, cantidad: Math.min(30, x.cantidad + 1) }
-          : x
-      )
+      prev.map((x) => {
+        if (x.producto !== nombreProducto) return x;
+        const stock = x.stock ?? Infinity;
+        const nuevaCantidad = Math.min(30, x.cantidad + 1, stock);
+        return { ...x, cantidad: nuevaCantidad };
+      })
     );
   };
 
@@ -124,42 +132,69 @@ function Cart() {
                   </tr>
                 </thead>
                 <tbody>
-                  {listaCarrito.map(({ producto, precio, cantidad }) => (
-                    <tr key={producto}>
-                      <td className="fw-semibold">{producto}</td>
-                      <td>{formatearPrecio(precio)}</td>
-                      <td>
-                        <div className="input-group">
+                  {listaCarrito.map(
+                    ({ producto, precio, cantidad, rutaImagen, stock }, idx) => (
+                      <tr key={`${producto}-${idx}`}>
+                        <td className="fw-semibold">
+                          <div className="d-flex align-items-center gap-3">
+                            {rutaImagen && (
+                              <img
+                                src={rutaImagen}
+                                alt={producto}
+                                style={{
+                                  width: 60,
+                                  height: 80,
+                                  objectFit: "contain",
+                                  borderRadius: 4,
+                                }}
+                                                            />
+                            )}
+                            <span>{producto}</span>
+                          </div>
+                        </td>
+                        <td>{formatearPrecio(precio)}</td>
+                        <td>
+                          <div className="input-group">
+                            <button
+                              className="btn btn-outline-secondary"
+                              onClick={() => decrementar(producto)}
+                            >
+                              −
+                            </button>
+                            <input
+                              className="form-control text-center"
+                              value={cantidad}
+                              onChange={(e) =>
+                                actualizarCantidad(producto, e.target.value)
+                              }
+                            />
+                            <button
+                              className="btn btn-outline-secondary"
+                              onClick={() => incrementar(producto)}
+                            >
+                              +
+                            </button>
+                          </div>
+                          {stock !== undefined && (
+                            <small className="text-muted">
+                              Stock máximo: {stock}
+                            </small>
+                          )}
+                        </td>
+                        <td className="fw-semibold">
+                          {formatearPrecio(precio * cantidad)}
+                        </td>
+                        <td>
                           <button
-                            className="btn btn-outline-secondary"
-                            onClick={() => decrementar(producto)}
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => quitarDelCarrito(producto)}
                           >
-                            −
+                            Quitar
                           </button>
-                          <input
-                            className="form-control text-center"
-                            value={cantidad}
-                            onChange={(e) => actualizarCantidad(producto, e.target.value)}
-                          />
-                          <button
-                            className="btn btn-outline-secondary"
-                            onClick={() => incrementar(producto)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td className="fw-semibold">{formatearPrecio(precio * cantidad)}</td>
-                      <td>
-                        <button
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={() => quitarDelCarrito(producto)}
-                        >
-                          Quitar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
             </div>
@@ -189,3 +224,4 @@ function Cart() {
 }
 
 export default Cart;
+

@@ -33,4 +33,18 @@ export const api = {
 
     return response.json(); // aquí vuelve el UsuarioModel
   },
+
+  // ... registrarUsuario, login
+
+  obtenerProductos: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/pokemon/productos`);
+    if (!response.ok) {
+      throw new Error('Error al obtener productos');
+    }
+    return response.json(); // [{ id, nombre, rutaImagen, precio, cantidad }, ...]
+  },
+
+
 };
+
+
