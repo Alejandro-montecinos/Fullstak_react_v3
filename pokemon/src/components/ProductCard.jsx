@@ -1,88 +1,60 @@
+// ProductCard.jsx
 import { useState } from 'react';
 
-const ProductCard = ({ producto, imagen, precio, agregarAlCarrito }) => {
+const formatearPrecio = (valor) =>
+  Number(valor).toLocaleString("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  });
+
+const ProductCard = ({ producto, agregarAlCarrito }) => {
   const [cantidad, setCantidad] = useState(1);
 
-  const handleCantidadChange = (e) => {
-    let value = Number(e.target.value);
-    value = Math.max(1, Math.min(value, 30));
-    setCantidad(value);
+  const handleAgregar = () => {
+    agregarAlCarrito(producto, cantidad);
+    setCantidad(1); // reset
   };
 
+  if (!producto) return null;
+
   return (
-    <article
-      className="p-3 rounded shadow text-center"
-      style={{
-        width: '180px',
-        minHeight: '300px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        border: '2px solid #eee',
-        backgroundColor: 'rgba(255,255,255,0.5)', // fondo con opacidad
-        boxShadow: '0 0 15px 3px rgba(255, 255, 204, 0.7)', // brillo suave
-        transition: 'box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = '0 0 30px 6px rgba(255, 255, 204, 0.9)';
-        e.currentTarget.style.transform = 'scale(1.05)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.boxShadow = '0 0 15px 3px rgba(255, 255, 204, 0.7)';
-        e.currentTarget.style.transform = 'scale(1)';
-      }}
-    >
+    <div className="card" style={{ width: '18rem', height: '100%' }}>
       <img
-        src={imagen}
-        alt={producto}
-        className="rounded mb-2"
-        style={{
-          width: '100%',
-          height: '100px',
-          objectFit: 'contain',
-          background: 'transparent', // fondo transparente para la imagen
-        }}
-      />
-      <h5 style={{ margin: '12px 0 4px' }}>{producto}</h5>
-      <p style={{ fontWeight: 600, color: '#333', marginBottom: '8px' }}>${precio.toLocaleString()}</p>
-      <div className="input-group mb-2" style={{ width: '120px' }}>
-        <button
-          className="btn btn-outline-secondary btn-sm"
-          style={{ minWidth: '32px' }}
-          onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-        >
-          -
-        </button>
-        <input
-          type="number"
-          min="1"
-          max="30"
-          value={cantidad}
-          onChange={handleCantidadChange}
-          className="form-control text-center"
-          style={{ padding: '2px' }}
-        />
-        <button
-          className="btn btn-outline-secondary btn-sm"
-          style={{ minWidth: '32px' }}
-          onClick={() => setCantidad(Math.min(30, cantidad + 1))}
-        >
-          +
-        </button>
+  src={producto.rutaImagen}
+  className="card-img-top"
+  alt={producto.nombre}
+  style={{
+    height: '260px',        // ajusta el alto fijo que quieras
+    objectFit: 'contain',   // muestra toda la carta aunque sobre espacio
+    backgroundColor: '#000',// opcional, fondo detrás de la imagen
+  }}
+/>
+
+      <div className="card-body d-flex flex-column">
+        <h5 className="card-title">{producto.nombre}</h5>
+        <p className="card-text fw-bold fs-4 mb-2">
+          {formatearPrecio(producto.precio)}
+        </p>
+        <p className="card-text text-muted small mb-3">
+          Stock: {producto.cantidad || 0}
+        </p>
+        
+        <div className="input-group mb-3">
+          <input
+            type="number"
+            className="form-control"
+            value={cantidad}
+            onChange={(e) => setCantidad(Math.max(1, Math.min(30, e.target.value)))}
+            min="1"
+            max="30"
+          />
+          <button className="btn btn-primary" onClick={handleAgregar}>
+            Agregar
+          </button>
+        </div>
       </div>
-      <button
-        className="btn w-100"
-        style={{
-          fontWeight: 600,
-          backgroundColor: '#646372ff',
-          color: 'white',
-          border: 'none',
-        }}
-        onClick={() => agregarAlCarrito(producto, precio, cantidad)}
-      >
-        <i className="bi bi-ticket-perforated"></i> Añadir
-      </button>
-    </article>
+    </div>
   );
 };
 
